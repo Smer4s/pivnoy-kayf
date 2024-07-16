@@ -1,36 +1,49 @@
+using BeerBuzz.Domain;
+using BeerBuzz.Domain.Abstractions;
+using BeerBuzz.Domain.Common.Utils;
+using BeerBuzz.Infrastructure;
 
-namespace BeerBuzz.WebAPI
+namespace BeerBuzz.WebAPI;
+
+public static class Program
 {
-    public class Program
+    public static void Main(string[] args)
     {
-        public static void Main(string[] args)
+        var builder = WebApplication.CreateBuilder(args);
+
+        builder.Services.AddControllers();
+        builder.Services.AddEndpointsApiExplorer();
+        builder.Services.AddSwaggerGen();
+
+        builder.Services.AddApplicationServices();
+        builder.Services.AddInfrastructureServices();
+
+        var app = builder.Build();
+
+        app.UseSwagger();
+        app.UseSwaggerUI();
+
+        app.UseHttpsRedirection();
+
+        app.UseAuthorization();
+
+        app.MapControllers();
+
+        app.ApplyDatabaseMigrations();
+
+        app.Run();
+    }
+
+    private static void ApplyDatabaseMigrations(this WebApplication app)
+    {
+        using var scope = app.Services.CreateScope();
+
+        var publicMigrator = scope.ServiceProvider.GetRequiredService<IDatabaseMigrator>();
+        publicMigrator!.Migrate();
+
+        if (EnvFetcher.IsLocal() || EnvFetcher.IsDevelopment())
         {
-            var builder = WebApplication.CreateBuilder(args);
-
-            // Add services to the container.
-
-            builder.Services.AddControllers();
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-            builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
-
-            var app = builder.Build();
-
-            // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
-            {
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            }
-
-            app.UseHttpsRedirection();
-
-            app.UseAuthorization();
-
-
-            app.MapControllers();
-
-            app.Run();
+            publicMigrator.ApplySeeds();
         }
     }
 }
