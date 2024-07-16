@@ -1,0 +1,6 @@
+@BeerBuzz.WebAPI_HostAddress = http://localhost:5239
+
+GET {{BeerBuzz.WebAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
